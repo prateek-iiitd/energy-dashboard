@@ -8,7 +8,7 @@ from smap import core
 
 
 class Meter:
-    def __init__(self, Id, Rate, Floor, Type, Model, FlatNum, Block):
+    def __init__(self, Id, Rate, Floor, Type, Model, FlatNum, Block, Wing):
         self. Id = Id
         self.Rate = Rate
 	self.Floor = Floor
@@ -16,6 +16,7 @@ class Meter:
 	self.Model = Model
 	self.FlatNum = FlatNum
 	self.Block = Block
+	self.Wing = Wing
 
 class ModbusUSBDriver(SmapDriver):
     def setup(self, opts):
@@ -30,6 +31,7 @@ class ModbusUSBDriver(SmapDriver):
 		self.TYPES = [str(opts.get('TYPES'))]
 		self.FLATNUMS = [str(opts.get('FLATNUMS'))]
 		self.BLOCKS = [str(opts.get('BLOCKS'))]
+		self.WINGS = [str(opts.get('WINGS'))]
 	
 	else:
 		self.METERS = [int(x) for x in opts.get('METERS')]
@@ -41,12 +43,13 @@ class ModbusUSBDriver(SmapDriver):
         	self.MODELS = [str(x) for x in opts.get('MODELS')]
         	self.FLATNUMS = [str(x) for x in opts.get('FLATNUMS')]
 		self.BLOCKS = [str(x) for x in opts.get('BLOCKS')]
+		self.WINGS = [str(x) for x in opts.get('WINGS')]
 
         self.meter_count = len(self.METERS)
 
         meters = []
         for x in xrange (0, self.meter_count):
-            meters+=[Meter(self.METERS[x], self.RATES[x], self.FLOORS[x], self.TYPES[x], self.MODELS[x], self.FLATNUMS[x], self.BLOCKS[x])]
+            meters+=[Meter(self.METERS[x], self.RATES[x], self.FLOORS[x], self.TYPES[x], self.MODELS[x], self.FLATNUMS[x], self.BLOCKS[x], self.WINGS[x])]
 
         del(self.RATES)
         del(self.METERS)
@@ -54,6 +57,9 @@ class ModbusUSBDriver(SmapDriver):
 	del(self.TYPES)
 	del(self.MODELS)
 	del(self.FLATNUMS)
+	del(self.BLOCKS)
+	del(self.WINGS)
+	
 
 	self.reading_registers = {   'EM6400' : [2,6,10,14,18,22,32,36,46,50,60],
 			'EM6433' : [2,18,32,46,60],
@@ -114,7 +120,8 @@ class ModbusUSBDriver(SmapDriver):
                     'FlatNumber' : x.FlatNum,
                     'Type' : x.Type,
 		    'MeterID' : x.Id,
-		    'Block' : x.Block
+		    'Block' : x.Block,
+		    'Wing' : x.Wing
                     }
                 }
             #self.add_timeseries(self.CURRENT[x], 'Amperes',  data_type="double", timezone = 'Asia/Kolkata')

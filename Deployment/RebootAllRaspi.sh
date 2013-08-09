@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for dest in $(<all-ip.txt); do
+for dest in $(<IP-List.txt); do
 	echo "Rebooting RasPi at ${dest}"
 	ssh -p 1234 pi@${dest} sudo reboot
 done
