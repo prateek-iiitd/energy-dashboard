@@ -4,8 +4,21 @@ from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from pymodbus.transaction import ModbusSocketFramer as ModbusFramer
 from smap.driver import SmapDriver, util
 import struct
-from smap import core
+from smap import core, actuate
 
+class RateActuator(actuate.NStateActuator):
+    """Actuator to set the Polling Rate for a meter.
+    """
+    def setup(self, opts):
+	actuate.NStateActuator.setup(self, opts)
+	self.meter = opts.get('meter')	
+
+    def get_state(self, request):
+        return str(self.meter.Rate)
+
+    def set_state(self, request, state):
+        self.meter.Rate = int(state)
+	return str(self.meter.Rate)
 
 class Meter:
     def __init__(self, Id, Rate, Floor, Type, Model, FlatNum, Block, Wing):
@@ -127,7 +140,10 @@ class ModbusUSBDriver(SmapDriver):
             #self.add_timeseries(self.CURRENT[x], 'Amperes',  data_type="double", timezone = 'Asia/Kolkata')
             #self.add_timeseries(self.POWER[x], 'Watts', data_type='double', timezone = 'Asia/Kolkata')
             #self.add_timeseries(self.ENERGY[x], 'Watt-Hours',  data_type='double', timezone = 'Asia/Kolkata')
-            for y in self.parameters[x.Model]:
+            
+	    self.add_actuator('/Meter' + str(x.Id) + '/Rate','Seconds',RateActuator,data_type = 'long',timezone = 'Asia/Kolkata',setup={'states':[str(i) for i in range(1,31)],'meter':x})
+
+	    for y in self.parameters[x.Model]:
 	    	ts = self.add_timeseries('/Meter' + str(x.Id) + '/' + y, self.units[y], data_type ='double', timezone = 'Asia/Kolkata')
 		ts['Metadata'] = {'Extra' : {'PhysicalParameter' : y} }	
 		
