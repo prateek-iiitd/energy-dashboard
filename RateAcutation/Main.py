@@ -21,7 +21,7 @@ def get_path_from_meter_id(MeterID):
 
 def get_meter_type_from_meter_id(MeterID):
     query = "select distinct Metadata/Extra/Type where Metadata/Extra/MeterID = '%s'" %MeterID
-    result = get_query_response(qeury).strip("[]").split(",")
+    result = get_query_response(query).strip("[]").split(",")
     meter_type = [x.strip('" ') for x in result]
     return meter_type[0]
 
