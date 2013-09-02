@@ -17,7 +17,7 @@ def get_path_from_meter_id(MeterID):
     query = "select distinct Path where Metadata/Extra/MeterID = '%s' and Metadata/Extra/PhysicalParameter = 'Power'" %MeterID
     result = get_query_response(query).strip("[]").split(",")
     power_paths = [x.strip('" ') for x in result]
-    return power_paths[0][:-4]
+    return "/data" + power_paths[0][:-5]
 
 def get_meter_type_from_meter_id(MeterID):
     query = "select distinct Metadata/Extra/Type where Metadata/Extra/MeterID = '%s'" %MeterID
@@ -37,9 +37,14 @@ def get_polling_rate_from_meter_id(MeterID):
     return response.read()
 
 def change_rate_for_meter_id(MeterID, state):
-    change_path = get_path_from_meter_id(MeterID) + "Rate?state=%s" %MeterID
+    change_path = get_path_from_meter_id(MeterID) + "Rate?state=%s" %state
+    
+    query = "select distinct Metadata/Extra/IP where Metadata/Extra/MeterID = '%s'" %MeterID
+    result = get_query_response(query).strip("[]").split(",")
+    ip = [x.strip('" ') for x in result][0]
+
     raspi_conn = httplib.HTTPConnection(ip,8080)
-    raspi_conn.request("POST",rate_path)
+    raspi_conn.request("PUT",change_path)
     response = raspi_conn.getresponse()
     return response.read()
 
