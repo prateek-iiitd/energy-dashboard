@@ -22,8 +22,8 @@ class main_window(Tk):
         flatnum = self.apt_combobox.get()
         meter_type = self.type_combobox.get()
         meter_id = get_meter_id(flatnum,meter_type)
-        rate = get_polling_rate_from_meter_id(meter_id)
-
+	rate = get_polling_rate_from_meter_id(meter_id)
+	
         # rate = '5'
         # top = Toplevel()
         # top.title('Test')
@@ -71,7 +71,7 @@ class main_window(Tk):
         self.initialise()
 
     def selected(self,event=None):
-        self.type_combobox['values'] = self.check[self.apt_combobox.get()]
+        self.type_combobox['values'] = get_meter_types_from_flatnum(self.apt_combobox.get())
         self.type_combobox.current(0)
 
     def initialise(self):
@@ -88,8 +88,9 @@ class main_window(Tk):
         # self.config(menu=self.menubar)
 
         self.rate_options = [str(x) for x in xrange(1,31)]
-        self.flats = ['101','102','103']
-        self.check = {'101':('1','2'),'102':('2','3'),'103':('3','4')}
+        # self.flats = ['101','102','103']
+        self.flats = get_flatnums()
+	# self.check = {'101':('1','2'),'102':('2','3'),'103':('3','4')}
 
         self.apt_group = LabelFrame(self.mainframe,text="Select Apartment: ",padx=5,pady=5)
         self.apt_group.grid(column=0, row=0,columnspan=2)
@@ -106,7 +107,7 @@ class main_window(Tk):
 
         self.type_combobox = ttk.Combobox(self.type_group,state='readonly')
         self.type_combobox.grid(column=0,row=0,sticky=(W,E))
-        self.type_combobox['values'] = self.check[self.apt_combobox.get()]
+        self.type_combobox['values'] = get_meter_types_from_flatnum(self.apt_combobox.get())
         self.type_combobox.current(0)
 
 

@@ -63,13 +63,13 @@ def get_flatnums():
 
 def get_meter_id(flatnum, meter_type):
     query = "select distinct Metadata/Extra/MeterID where Metadata/Extra/FlatNumber = '%s' and Metadata/Extra/Type = '%s'" %(flatnum,meter_type)
-    result = get_query_response(query)
+    result = get_query_response(query).strip("[]").split(",")
     ids = [x.strip('" ') for x in result]
     return ids[0]
 
-def meter_types_from_flatnum(flatnum):
+def get_meter_types_from_flatnum(flatnum):
     query = "select distinct Metadata/Extra/Type where Metadata/Extra/FlatNumber = '%s'" %flatnum
-    results = get_query_response(query)
+    result = get_query_response(query).strip("[]").split(",")
     meter_types = [x.strip('" ') for x in result]
     return meter_types
 
