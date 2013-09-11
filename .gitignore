@@ -1,0 +1,8 @@
+## Extensions to ignore
+*.log
+*.pot
+*.pyc
+*.iml
+ 
+## Directories to ignore
+.idea/
