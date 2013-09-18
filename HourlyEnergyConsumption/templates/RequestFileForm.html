@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>Hourly Energy Consumption Data</title>
+
+</head>
+<body>
+
+
+    <h1>Select: </h1>
+
+    {% if form.errors %}
+        <p style="color: red;">
+            Please correct the error{{ form.errors|pluralize }} below.
+        </p>
+    {% endif %}
+
+    <form action="" method="post">
+        {% csrf_token %}
+
+        <div class="field">
+            {{ form.start_time.errors }}
+            <label for="id_subject">Start Day:</label>
+            {{ form.start_time }}
+        </div>
+        <div class="field">
+            {{ form.end_time.errors }}
+            <label for="id_email">End Day:</label>
+            {{ form.end_time }}
+        </div>
+        <div class="field">
+            {{ form.building.errors }}
+            <label for="id_message">Building:</label>
+            {{ form.building }}
+        </div>
+        <input type="submit" value="Download .xls file">
+    </form>
+</body>
+</html>
