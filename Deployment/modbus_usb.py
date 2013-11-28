@@ -9,7 +9,6 @@ from serial import SerialException
 class RateActuator(actuate.NStateActuator):
     """Actuator to set the Polling Rate for a meter.
     """
-
     def setup(self, opts):
         actuate.NStateActuator.setup(self, opts)
         self.meter = opts.get('meter')
@@ -39,7 +38,91 @@ class Meter:
 
 class ModbusUSBDriver(SmapDriver):
     def setup(self, opts):
-        ##Get information from config file about meters to be polled and the rates at which they are to polled.
+
+        self.read_configurations(opts)
+
+        ## Get number of meters by reading the length of the METERS list.
+        self.meter_count = len(self.METERS)
+
+        self.meters = []
+        for x in xrange(0, self.meter_count):
+            self.meters += [ Meter(self.METERS[x], self.RATES[x], self.FLOORS[x], self.TYPES[x], self.MODELS[x], self.FLATNUMS[x],
+                      self.BLOCKS[x], self.WINGS[x], self.LOADTYPES[x], self.SUBLOADTYPES[x], self.SUPPLYTYPES[x]) ]
+
+        del (self.RATES)
+        del (self.METERS)
+        del (self.FLOORS)
+        del (self.TYPES)
+        del (self.MODELS)
+        del (self.FLATNUMS)
+        del (self.BLOCKS)
+        del (self.WINGS)
+        del (self.LOADTYPES)
+        del (self.SUBLOADTYPES)
+        del (self.SUPPLYTYPES)
+
+        self.configure_parameters()
+
+        self.current = 0            ##Index for the queue
+
+        self.SLOWEST_POSSIBLE_RATE = 30
+        self.queue = []
+
+        ##Create 30 queues each representing a second. If the nth queue contains a meter ID x ==> That meter x is to be polled in the nth second.
+        ##We will use the modulo operation to maintain a circular loop.
+        for x in xrange(0, self.SLOWEST_POSSIBLE_RATE):
+            self.queue += [[]]
+
+        for self.current in xrange(0, self.meter_count):
+            self.queue[self.current].append(self.meters[self.current])
+
+        self.current = 0
+
+        self.configure_meter_streams_metadata()
+
+        ##Connect using parameters and return the handle.
+        self.client = self.CONNECT_TO_METER()
+        self.res = None
+        self.current = 0
+
+    def start(self):
+        util.periodicSequentialCall(self.read).start(1)
+
+    def read(self):
+        for x in self.queue[self.current]:
+            try:
+                t = util.now()
+                self.res = self.client.read_holding_registers(3900, 62, unit=x.Id)
+
+                if (self.res == None):
+                    continue
+
+                for y in xrange(0, len(self.parameters[x.Model])):
+                    read_reg = self.reading_registers[x.Model][y]
+                    value = convert((self.res.registers[read_reg + 1] << 16) + self.res.registers[read_reg])
+                    self.add('/Meter' + str(x.Id) + '/' + self.parameters[x.Model][y], t, value)
+
+            except SerialException:
+                print "Serial Exception encountered. Looking for new tty port."
+                self.client = self.CONNECT_TO_METER()
+
+        pop_count = len(self.queue[self.current])
+        for x in xrange(0, pop_count):
+            popped = self.queue[self.current].pop(0)
+            next_index = (self.current + popped.Rate) % self.SLOWEST_POSSIBLE_RATE
+
+            while (len(self.queue[next_index])==2):
+                next_index+=1
+                if (next_index == self.SLOWEST_POSSIBLE_RATE):
+                    next_index=0
+
+            self.queue[next_index].append(popped)
+
+
+        self.current = (self.current + 1) % self.SLOWEST_POSSIBLE_RATE
+
+    def read_configurations(self,opts):
+    ##Get information from config file about meters to be polled and the rates at which they are to polled.
         ##Get meter specific Metadata that is supplied by the config file.
 
         ## In case there is just one meter whose configuration is supplied in the file.
@@ -71,27 +154,19 @@ class ModbusUSBDriver(SmapDriver):
             self.SUBLOADTYPES = [str(x) for x in opts.get('SUBLOADTYPES')]
             self.SUPPLYTYPES = [str(x) for x in opts.get('SUPPLYTYPES')]
 
+                ##Connection Parameters.
+        self.BAUD_RATE = int(opts.get('BAUD_RATE', 9600))
+        self.STOP_BITS = int(opts.get('STOP_BITS', 1))
+        self.BYTE_SIZE = int(opts.get('BYTE_SIZE', 8))
+        self.PARITY = opts.get('PARITY', 'E')
+        self.COM_METHOD = opts.get('COM_METHOD', 'rtu')
+        self.TIME_OUT = float(opts.get('TIME_OUT', 0.2))
+        self.RETRIES = int(opts.get('RETRIES', 1))
+        self.ID_VENDOR = opts.get('ID_VENDOR', '0403')
+        self.ID_PRODUCT = opts.get('ID_PRODUCT', '6001')
 
-        ## Get number of meters by reading the length of the METERS list.
-        self.meter_count = len(self.METERS)
 
-        meters = []
-        for x in xrange(0, self.meter_count):
-            meters += [ Meter(self.METERS[x], self.RATES[x], self.FLOORS[x], self.TYPES[x], self.MODELS[x], self.FLATNUMS[x],
-                      self.BLOCKS[x], self.WINGS[x], self.LOADTYPES[x], self.SUBLOADTYPES[x], self.SUPPLYTYPES[x]) ]
-
-        del (self.RATES)
-        del (self.METERS)
-        del (self.FLOORS)
-        del (self.TYPES)
-        del (self.MODELS)
-        del (self.FLATNUMS)
-        del (self.BLOCKS)
-        del (self.WINGS)
-        del (self.LOADTYPES)
-        del (self.SUBLOADTYPES)
-        del (self.SUPPLYTYPES)
-
+    def configure_parameters(self):
         self.reading_registers = {'EM6400': [2, 6, 10, 14, 18, 22, 32, 36, 46, 50, 60],
                                   'EM6433': [2, 18, 32, 46, 60],
                                   'EM6436': [2, 18, 22, 32, 36, 46, 50, 60]}
@@ -104,34 +179,20 @@ class ModbusUSBDriver(SmapDriver):
                    'PowerFactorPhase3', 'Energy']}
 
         self.units = {'Power': 'Watts',
-                      'PowerFactor': '',
-                      'Voltage': 'Volts',
-                      'Frequency': 'Hertz',
-                      'Energy': 'Watt-Hours',
-                      'PowerPhase1': 'Watts',
-                      'PowerPhase2': 'Watts',
-                      'PowerPhase3': 'Watts',
-                      'PowerFactorPhase1': '',
-                      'PowerFactorPhase2': '',
-                      'PowerFactorPhase3': ''}
+                  'PowerFactor': '',
+                  'Voltage': 'Volts',
+                  'Frequency': 'Hertz',
+                  'Energy': 'Watt-Hours',
+                  'PowerPhase1': 'Watts',
+                  'PowerPhase2': 'Watts',
+                  'PowerPhase3': 'Watts',
+                  'PowerFactorPhase1': '',
+                  'PowerFactorPhase2': '',
+                  'PowerFactorPhase3': ''}
 
-        self.current = 0            ##Index for the queue
-
-        self.SLOWEST_POSSIBLE_RATE = 64
-        self.queue = []
-
-        ##Create 64 queues each representing a second. If the nth queue contains a meter ID x ==> That meter x is to be polled in the nth second.
-        ##We will use the modulo operation to maintain a circular loop.
-        for x in xrange(0, self.SLOWEST_POSSIBLE_RATE):
-            self.queue += [[]]
-
-        for self.current in xrange(0, self.meter_count):
-            self.queue[self.current].append(meters[self.current])
-
-        self.current = 0
-
-        ##Adding collections to represent meters.
-        for x in meters:
+    def configure_meter_streams_metadata(self):
+    ##Adding collections to represent meters.
+        for x in self.meters:
             path = ('/Meter' + str(x.Id))
             self.add_collection(path)
             self.meter_coll = self.get_collection(path)
@@ -155,7 +216,7 @@ class ModbusUSBDriver(SmapDriver):
                     'SupplyType' : x.SupplyType
                 }
             }
-
+            ## Add actuator to meter.
             self.add_actuator('/Meter' + str(x.Id) + '/Rate', 'Seconds', RateActuator, data_type='long',
                               timezone='Asia/Kolkata', setup={'states': [str(i) for i in range(1, 31)], 'meter': x})
 
@@ -163,61 +224,6 @@ class ModbusUSBDriver(SmapDriver):
                 ts = self.add_timeseries('/Meter' + str(x.Id) + '/' + y, self.units[y], data_type='double',
                                          timezone='Asia/Kolkata')
                 ts['Metadata'] = {'Extra': {'PhysicalParameter': y}}
-
-        ##Connection Parameters.
-        self.BAUD_RATE = int(opts.get('BAUD_RATE', 9600))
-        self.STOP_BITS = int(opts.get('STOP_BITS', 1))
-        self.BYTE_SIZE = int(opts.get('BYTE_SIZE', 8))
-        self.PARITY = opts.get('PARITY', 'E')
-        self.COM_METHOD = opts.get('COM_METHOD', 'rtu')
-        self.TIME_OUT = float(opts.get('TIME_OUT', 0.2))
-        self.RETRIES = int(opts.get('RETRIES', 1))
-        self.ID_VENDOR = opts.get('ID_VENDOR', '0403')
-        self.ID_PRODUCT = opts.get('ID_PRODUCT', '6001')
-
-        ##Connect using parameters and return the handle.
-        self.client = self.CONNECT_TO_METER()
-        self.res = None
-        self.current = 0
-
-    def start(self):
-        util.periodicSequentialCall(self.read).start(1)
-
-    def read(self):
-        for x in self.queue[self.current]:
-            try:
-                t = util.now()
-                self.res = self.client.read_holding_registers(3900, 62, unit=x.Id)
-
-                if (self.res == None):
-                    continue
-
-                for y in xrange(0, len(self.parameters[x.Model])):
-                    read_reg = self.reading_registers[x.Model][y]
-                    value = convert((self.res.registers[read_reg + 1] << 16) + self.res.registers[read_reg])
-                    self.add('/Meter' + str(x.Id) + '/' + self.parameters[x.Model][y], t, value)
-
-                pop_count = len(self.queue[self.current])
-                for x in xrange(0, pop_count):
-                    popped = self.queue[self.current].pop(0)
-                    next_index = (self.current + popped.Rate) % self.SLOWEST_POSSIBLE_RATE
-
-                    while (len(self.queue[next_index]) == 2):
-                        next_index += 1
-                        if (next_index == self.SLOWEST_POSSIBLE_RATE):
-                            next_index = 0
-
-                    self.queue[next_index].append(popped)
-
-
-            except SerialException:
-                print "Serial Exception encountered. Looking for new tty port."
-                self.client = self.CONNECT_TO_METER()
-
-
-        self.current += 1
-        if (self.current == self.SLOWEST_POSSIBLE_RATE):
-            self.current = 0
 
 
     def CONNECT_TO_METER(self):
