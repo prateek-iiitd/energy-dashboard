@@ -1,4 +1,5 @@
 from django.conf.urls import patterns, include, url
+from RateChangeUtility import views
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
@@ -14,4 +15,6 @@ urlpatterns = patterns('',
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^MatchMeters/$', views.match_meters),
+    url(r'^GetBlocks/$',views.get_blocks),
 )

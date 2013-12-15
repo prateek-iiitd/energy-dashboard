@@ -1,9 +1,96 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title></title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% block title %}
+    Match Meters
+{% endblock %}
+
+
+{% block content %}
+
+    <form class="custom" action="" method="post">
+    {% csrf_token %}
+        <div class="row collapse" style="margin-top: 80px">
+
+            <div class="large-6 large-centered columns">
+                <fieldset style="border-color: #2ba6cb">
+                    <legend style="color: #2ba6cb">Meter Selection</legend>
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Building: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.building }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Block: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.block }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Wing: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.wing }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Floor: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.floor }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-centered columns">
+                            <input type="submit" class="button small round" value="Find Matching Meters">
+                        </div>
+                    </div>
+
+                </fieldset>
+            </div>
+        </div>
+
+    </form>
+
+    <div class="row"></div>
+
+    <script>
+        function get_blocks() {
+            var e = document.getElementById("id_building");
+            var selected_building = e.options[e.selectedIndex].text;
+            console.log(selected_building);
+
+            var xmlhttp;
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("POST","/GetBlocks/",true);
+            xmlhttp.setRequestHeader("Content-type","application/json");
+            xmlhttp.setRequestHeader("X-Requested-With","XMLHttpRequest");
+
+            var send_data = JSON.stringify({"Building" : selected_building});
+            console.log(send_data);
+            xmlhttp.send(send_data);
+            console.log(xmlhttp.responseText)
+
+{#            new Ajax.Request('/GetBlocks/', {#}
+{#                method: 'post',#}
+{#                parameters: $H({'type': $('id_type').getValue()}),#}
+{#                onSuccess: function (transport) {#}
+{#                    var e = $('id_color')#}
+{#                    if (transport.responseText)#}
+{#                        e.update(transport.responseText)#}
+{#                }#}
+{#            }); // end new Ajax.Request#}
+}
+    </script>
+
+{% endblock %}

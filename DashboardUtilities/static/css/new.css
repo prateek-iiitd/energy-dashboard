@@ -1,0 +1,19 @@
+h3 {
+    font-family: "Helvetica";
+    color: teal;
+}
+
+h4 {
+    font-family: "Helvetica Neue";
+    color: teal;
+}
+
+legend{
+    font-size: x-large;
+    font-family: "Helvetica";
+    color: teal;
+}
+
+p{
+    font-family: "Helvetica Neue";
+}

@@ -1,9 +1,50 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title></title>
-</head>
-<body>
 
+    <link rel="stylesheet" href="/static/css/normalize.css">
+    <link rel="stylesheet" href="/static/css/foundation.css">
+    <link rel="stylesheet" href="/static/css/new.css">
+
+    <script src="/static/js/vendor/custom.modernizr.js"></script>
+    {% block head %}
+    {% endblock %}
+
+    <title>{% block title %}Dashboard Utilities{% endblock %}</title>
+</head>
+<body >
+
+<section role="main">
+<nav class="top-bar">
+    <ul class="title-area">
+        <li class="divider"></li>
+        <li class="name">
+            <h1 style="color: #2ba6cb">Dashboard Utilities</h1>
+        </li>
+        <li class="divider"></li>
+    </ul>
+    <section class="top-bar-section">
+        <ul class="right">
+            <li class="divider"></li>
+            <li><a href="/match_meters/">Change Polling Rate</a></li>
+            <li class="divider"></li>
+            <li><a href="/download_csv/">Download as CSV</a></li>
+            <li><a href="/login/" class="small button">Login</a></li>
+            <li class="divider"></li>
+        </ul>
+    </section>
+</nav>
+
+{% block content %}
+{% endblock %}
+</section>
+
+<script src="/static/js/vendor/jquery.js"></script>
+<script src="/static/js/foundation.min.js"></script>
+<script src="/static/js/foundation/foundation.forms.js"></script>
+<script src="/static/js/foundation/foundation.dropdown.js"></script>
+<script>
+    $(document).foundation();
+</script>
 </body>
 </html>
