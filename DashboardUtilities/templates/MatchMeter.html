@@ -66,8 +66,8 @@
 
     <script>
         function get_blocks() {
-            var e = document.getElementById("id_building");
-            var selected_building = e.options[e.selectedIndex].text;
+            var building_select = document.getElementById("id_building");
+            var selected_building = building_select.options[building_select.selectedIndex].text;
             console.log(selected_building);
 
             var xmlhttp;
@@ -75,11 +75,31 @@
             xmlhttp.open("POST","/GetBlocks/",true);
             xmlhttp.setRequestHeader("Content-type","application/json");
             xmlhttp.setRequestHeader("X-Requested-With","XMLHttpRequest");
+            xmlhttp.onreadystatechange = function(){
+                if (xmlhttp.readyState==4){
+                    resp = xmlhttp.responseText;
+{#                    console.log(resp);#}
+                    var js = JSON.parse(resp);
+
+                    var block_select = document.getElementById("id_block");
+                    var select_size = block_select.length;
+                    console.log(select_size);
+                    for (var i=0; i<select_size; i++)
+                    {
+                        block_select.remove(0);
+                    }
+                    for (var i=0; i<js.length; i++)
+                    {
+                        block_select.add(new Option(js[i],js[i]));
+                    }
+                    console.log(block_select.options);
+                    Foundation.libs.forms.refresh_custom_select($("#id_block"))
+                }
+            }
 
             var send_data = JSON.stringify({"Building" : selected_building});
             console.log(send_data);
             xmlhttp.send(send_data);
-            console.log(xmlhttp.responseText)
 
 {#            new Ajax.Request('/GetBlocks/', {#}
 {#                method: 'post',#}

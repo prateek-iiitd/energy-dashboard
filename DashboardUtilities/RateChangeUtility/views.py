@@ -24,8 +24,10 @@ def get_blocks(request):
         js = json.loads(request.body)
         building = js['Building']
         result = execute_distinct_query("select distinct Metadata/Extra/Block where Metadata/Location/Building = '%s'" %building)
-        blocks = [x.strip('" ') for x in result]
-        print json.dumps(blocks)
+        blocks = [x.strip().replace('"',"") for x in result.strip("[]").split(',')]
+        print blocks
+        # blocks = [x.strip('" ') for x in result]
+        # print json.dumps(blocks)
         return HttpResponse(json.dumps(blocks))
     else:
         return HttpResponseBadRequest()
