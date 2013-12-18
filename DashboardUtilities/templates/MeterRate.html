@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Meter Polling Rate
+{% endblock %}
+
+{% block content %}
+    <div class="large-4 large-centered columns">
+        <div class="panel" style="margin-top: 80px; overflow: auto">
+            <div class="large-centered large-10 columns">
+                <h5>Meter ID: {{ meter.Metadata.Extra.MeterID }}</h5>
+                <h5>Building: {{ meter.Metadata.Location.Building }}</h5>
+                <h5>Floor: {{ meter.Metadata.Location.Floor }}</h5>
+                <h5>Load: {{ meter.Metadata.Extra.LoadType }}</h5>
+                <h5>Subload: {{ meter.Metadata.Extra.SubLoadType }}</h5>
+                <h5>Supply: {{ meter.Metadata.Extra.SupplyType }}</h5>
+            </div>
+
+            <div class="row" style="margin-top: 30px">
+                <div class="large-8 columns large-centered">
+                    <div class="alert-box secondary text-center">Current Rate: {{ current_rate }}</div>
+                </div>
+            </div>
+
+            <div class="large-8 columns large-centered" style=" margin-top: 30px">
+                <h5>Change Polling Rate</h5>
+            </div>
+
+            <form class="custom">
+                <div class="large-8 columns large-centered" style="margin-top: 5px">
+
+                    <select id="id_rate">
+                        {% for x in rates %}
+                            <option value="{{ x }}">{{ x }}</option>
+                        {% endfor %}
+                    </select>
+
+                </div>
+
+                <div class="large-5 large-centered columns">
+                    <button class="button small round" type="button" onclick="change_rate()">Apply Change</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        function change_rate() {
+            var xmlhttp;
+            var rate;
+
+            var rate_select = document.getElementById('id_rate');
+            var rate = rate_select.options[rate_select.selectedIndex].text;
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("POST", "/PollingRate/", true);
+            xmlhttp.setRequestHeader("Content-type", "application/json");
+            xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    alert("Rate has been successfully changed for the meter.")
+                }
+
+                else if(xmlhttp.readyState == 4 && xmlhttp.status ==304) {
+                    alert("Some error occured.");
+                }
+            }
+
+            var send_data = JSON.stringify({'Path':'{{ meter.Path }}', 'Rate':rate});
+            xmlhttp.send(send_data)
+        }
+    </script>
+
+{% endblock %}

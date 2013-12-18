@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Matching Meters
+{% endblock %}
+
+{% block content %}
+
+    <div class="row collapse" style="margin-top: 80px">
+        {% for meter in meters %}
+            <div class="row" style=" margin-top: 45px">
+                <div class="large-9 columns large-centered">
+                    <div class="panel" style="overflow: hidden">
+                        <div class="large-8 columns">
+                            <h5>Meter ID: {{ meter.Metadata.Extra.MeterID }}</h5>
+                            <h5>Building: {{ meter.Metadata.Location.Building }}</h5>
+                            <h5>Floor: {{ meter.Metadata.Location.Floor }}</h5>
+                            <h5>Load: {{ meter.Metadata.Extra.LoadType }}</h5>
+                            <h5>Subload: {{ meter.Metadata.Extra.SubLoadType }}</h5>
+                            <h5>Supply: {{ meter.Metadata.Extra.SupplyType }}</h5>
+
+                        </div>
+
+                        <div class="large-4 columns " style="vertical-align: bottom">
+                            <form action="/PollingRate/" method="get">
+                                <input type="hidden" name="Path" value="{{ meter.Path|urlencode }}">
+                                <input type="submit" value="Change Rate" class="button small radius"
+                                       style="width: 80%; margin-top: 45px">
+                            </form>
+                            <form action="/DownloadOptions/" method="get">
+                                <input type="hidden" name="Path" value="{{ meter.Path|urlencode }}">
+                                <input type="submit" value="Download Data" class="button small radius"
+                                       style="width: 80%">
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+
+    </div>
+
+{% endblock %}

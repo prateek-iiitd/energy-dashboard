@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Please Login
+{% endblock %}
+
+
+{% block content %}
+    <div class="row" style="margin-top: 80px">
+        <h3>Error!!</h3>
+
+        <p>Sorry but some error made you impossible to login.</p>
+
+        <p>Please make sure you are using your IIIT-D account and have access privileges. Log out from all other accounts and try again.</p>
+
+        {% if messages %}
+            {% for msg in messages %}
+                <p class="error">{{ msg.message }} ({{ msg.extra_tags }})</p>
+            {% endfor %}
+        {% endif %}
+        {% if error_msg %}
+            <p>Details:</p>
+            <p class="error">{{ error_msg }}</p>
+        {% endif %}
+
+    </div>
+{% endblock %}

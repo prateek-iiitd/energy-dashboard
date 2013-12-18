@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <link href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
+    <link href="http://netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome-ie7.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/foundation-datepicker.css">
+    <script src="/static/js/foundation-datetimepicker.js"></script>
+{% endblock %}
+
+{% block title %}
+    Download Options
+{% endblock %}
+
+
+{% block content %}
+    <div class="large-4 large-centered columns" style="margin-top: 40px">
+        <div class="panel" style="margin-top: 80px; overflow: auto">
+            <div class="large-centered large-10 columns">
+                <h5>Meter ID: {{ meter.Metadata.Extra.MeterID }}</h5>
+                <h5>Building: {{ meter.Metadata.Location.Building }}</h5>
+                <h5>Floor: {{ meter.Metadata.Location.Floor }}</h5>
+                <h5>Load: {{ meter.Metadata.Extra.LoadType }}</h5>
+                <h5>Subload: {{ meter.Metadata.Extra.SubLoadType }}</h5>
+                <h5>Supply: {{ meter.Metadata.Extra.SupplyType }}</h5>
+            </div>
+        </div>
+
+        <div class="row">
+            <form method="post" action="" class="custom">
+                <label>{{ form.start_time.label }}</label>{{ form.start_time }}
+                <label>{{ form.end_time.label }}</label>{{ form.end_time }}
+                <label>{{ form.parameter.label }}</label>
+                <select id="id_parameter" name="parameter">
+                    {% for p in parameters %}
+                        <option value="{{p}}">{{p}}</option>
+                    {% endfor %}
+                </select>
+                {% csrf_token %}
+                <input type="hidden" id="id_path" name="path" value="{{ meter.Path }}">
+                <input type="submit" class="button small round" value="Download CSV Data">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        $(function () {
+            $('#id_start_time').fdatetimepicker({
+                format: 'yyyy-mm-dd hh:ii'
+            });
+            $('#id_end_time').fdatetimepicker({
+                format: 'yyyy-mm-dd hh:ii'
+            });
+
+        });
+    </script>
+{% endblock %}

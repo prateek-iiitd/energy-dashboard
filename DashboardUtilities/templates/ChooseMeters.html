@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Find Meters
+{% endblock %}
+
+
+{% block content %}
+
+    <form class="custom" action="/MatchResults/" method="post">
+        {% csrf_token %}
+        <div class="row collapse" style="margin-top: 80px">
+
+            <div class="large-6 large-centered columns">
+                <fieldset style="border-color: #2ba6cb">
+                    <legend style="color: #2ba6cb">Meter Selection</legend>
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Building: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.building }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Block: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.block }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Wing: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.wing }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 columns">
+                            <h5 class="inline">Floor: </h5>
+                        </div>
+                        <div class="large-6 columns">
+                            {{ form.floor }}
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 20px">
+                        <div class="large-4 large-centered columns">
+                            <input type="submit" class="button small round" value="Find Matching Meters">
+                        </div>
+                    </div>
+
+                </fieldset>
+            </div>
+        </div>
+
+    </form>
+
+    <div class="row"></div>
+
+    <script>
+        function get_blocks() {
+            var building_select = document.getElementById("id_building");
+            var selected_building = building_select.options[building_select.selectedIndex].text;
+{#            console.log(selected_building);#}
+
+            var xmlhttp;
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("POST", "/GetBlocks/", true);
+            xmlhttp.setRequestHeader("Content-type", "application/json");
+            xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status==200) {
+                    resp = xmlhttp.responseText;
+                    console.log(resp);
+                    var js = JSON.parse(resp);
+
+                    var block_select = document.getElementById("id_block");
+                    var select_size = block_select.length;
+{#                    console.log(select_size);#}
+                    for (var i = 0; i < select_size; i++) {
+                        block_select.remove(0);
+                    }
+                    for (var i = 0; i < js.length; i++) {
+                        block_select.add(new Option(js[i], js[i]));
+                    }
+{#                    console.log(block_select.options);#}
+                    Foundation.libs.forms.refresh_custom_select($("#id_block"))
+                }
+            }
+
+            var send_data = JSON.stringify({"Building": selected_building});
+            console.log(send_data);
+            xmlhttp.send(send_data);
+        }
+
+        function get_wings() {
+            var building_select = document.getElementById("id_building");
+            var selected_building = building_select.options[building_select.selectedIndex].text;
+{#            console.log(selected_building);#}
+
+            var block_select = document.getElementById("id_block");
+            var selected_block = block_select.options[block_select.selectedIndex].text;
+{#            console.log(selected_block);#}
+
+
+            var xmlhttp;
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("POST", "/GetWings/", true);
+            xmlhttp.setRequestHeader("Content-type", "application/json");
+            xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status==200) {
+                    resp = xmlhttp.responseText;
+                    console.log(resp);
+                    var js = JSON.parse(resp);
+
+                    var wing_select = document.getElementById("id_wing");
+                    var select_size = wing_select.length;
+{#                    console.log(select_size);#}
+                    for (var i = 0; i < select_size; i++) {
+                        wing_select.remove(0);
+                    }
+                    for (var i = 0; i < js.length; i++) {
+                        wing_select.add(new Option(js[i], js[i]));
+                    }
+{#                    console.log(wing_select.options);#}
+                    Foundation.libs.forms.refresh_custom_select($("#id_wing"))
+                }
+            }
+
+            var send_data = JSON.stringify({"Building": selected_building, "Block": selected_block});
+            console.log(send_data);
+            xmlhttp.send(send_data);
+        }
+
+        function get_floors() {
+            var building_select = document.getElementById("id_building");
+            var selected_building = building_select.options[building_select.selectedIndex].text;
+{#            console.log(selected_building);#}
+
+            var block_select = document.getElementById("id_block");
+            var selected_block = block_select.options[block_select.selectedIndex].text;
+{#            console.log(selected_block);#}
+
+            var wing_select = document.getElementById("id_wing");
+            var selected_wing = wing_select.options[wing_select.selectedIndex].text;
+{#            console.log(selected_wing);#}
+
+            var xmlhttp;
+            xmlhttp = new XMLHttpRequest();
+            xmlhttp.open("POST", "/GetFloors/", true);
+            xmlhttp.setRequestHeader("Content-type", "application/json");
+            xmlhttp.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status==200) {
+                    resp = xmlhttp.responseText;
+                    console.log(resp);
+                    var js = JSON.parse(resp);
+
+                    var floor_select = document.getElementById("id_floor");
+                    var select_size = floor_select.length;
+{#                    console.log(select_size);#}
+                    for (var i = 0; i < select_size; i++) {
+                        floor_select.remove(0);
+                    }
+                    for (var i = 0; i < js.length; i++) {
+                        floor_select.add(new Option(js[i], js[i]));
+                    }
+{#                    console.log(floor_select.options);#}
+                    Foundation.libs.forms.refresh_custom_select($("#id_floor"))
+                }
+            }
+
+            var send_data = JSON.stringify({"Building": selected_building, "Block": selected_block, "Wing": selected_wing});
+            console.log(send_data);
+            xmlhttp.send(send_data);
+        }
+
+    </script>
+
+{% endblock %}

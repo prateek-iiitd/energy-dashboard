@@ -14,7 +14,15 @@ urlpatterns = patterns('',
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
+    url(r'', include('social_auth.urls')),
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^MatchMeters/$', views.match_meters),
+    url(r'^$', views.choose_meters),
     url(r'^GetBlocks/$',views.get_blocks),
+    url(r'^GetWings/$',views.get_wings),
+    url(r'^GetFloors/$',views.get_floors),
+    url(r'^MatchResults/$',views.matching_meters),
+    url(r'^PollingRate/$',views.polling_rate),
+    url(r'^DownloadOptions/',views.download_options),
+    url(r'^logout/$',views.logout),
+    url(r'^login-error/$', views.error),
 )
