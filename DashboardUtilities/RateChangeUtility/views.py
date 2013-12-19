@@ -56,12 +56,13 @@ def matching_meters(request):
 def polling_rate(request):
     if request.method=="GET":
         meter_rate_path = request.GET.get('Path')[:-5]+'Rate'
-        ip_query = "select Metadata/Extra/IP where Path = '%s'" %meter_rate_path
+        ip_query = "select Metadata/Extra/IP where Path = '%s'" %(meter_rate_path[:-4]+'Power')
         js_response = json.loads(execute_distinct_query(ip_query))[0]
+        print js_response
         ip_addr = js_response['Metadata']['Extra']['IP']
 
         raspi_conn = httplib.HTTPConnection(ip_addr,8080)
-        raspi_conn.request("GET",meter_rate_path)
+        raspi_conn.request("GET",'/data'+meter_rate_path)
         response = raspi_conn.getresponse()
         result = json.loads(response.read())
         current_rate =  result['Readings'][0][1]+1
@@ -81,7 +82,7 @@ def polling_rate(request):
 
         if int(set_rate) in xrange(1,31):
             raspi_conn = httplib.HTTPConnection(ip_addr,8080)
-            raspi_conn.request("PUT",change_path)
+            raspi_conn.request("PUT",'/data'+change_path)
             response = raspi_conn.getresponse()
             if (response.status == 200):
                 return HttpResponse()

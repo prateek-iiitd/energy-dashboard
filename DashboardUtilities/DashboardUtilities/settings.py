@@ -176,8 +176,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
 )
 
-GOOGLE_OAUTH2_CLIENT_ID = '1069046860596.apps.googleusercontent.com'
-GOOGLE_OAUTH2_CLIENT_SECRET = 'mGAg7rbjRjxgMVvacNdmm2WQ'
+GOOGLE_OAUTH2_CLIENT_ID = '645432718031-2tfduebkclgg24u5drkf3pi0ppsm33bj.apps.googleusercontent.com'
+GOOGLE_OAUTH2_CLIENT_SECRET = 'oAsGj85XL6TODjivZuUMh5Lk'
 GOOGLE_WHITE_LISTED_EMAILS = ['Prateek11077@iiitd.ac.in', 'amarjeet@iiitd.ac.in']
 
 LOGIN_URL = '/login/'
