@@ -11,6 +11,10 @@ from django.contrib.messages.api import get_messages
 from django.template import RequestContext
 import calendar
 
+
+def login(request):
+    return render(request,'Login.html')
+
 def logout(request):
     """Logs out user"""
     auth_logout(request)

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    Find Meters
+{% endblock %}
+
+
+{% block content %}
+    <div class="row">
+    <div class="large-centered large-6 columns">
+        <div class="panel" style="margin-top: 80px">Please <a href="{% url 'socialauth_begin' 'google-oauth2' %}">login</a> to continue.</div>
+    </div>
+    </div>
+{% endblock %}

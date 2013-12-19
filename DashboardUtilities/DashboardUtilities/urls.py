@@ -24,5 +24,6 @@ urlpatterns = patterns('',
     url(r'^PollingRate/$',views.polling_rate),
     url(r'^DownloadOptions/',views.download_options),
     url(r'^logout/$',views.logout),
+    url(r'^login/$',views.login),
     url(r'^login-error/$', views.error),
 )
