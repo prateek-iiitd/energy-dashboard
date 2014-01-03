@@ -215,20 +215,20 @@ class ModbusUSBDriver(SmapDriver):
                 'Instrument': {
                     'Manufacturer': 'Schneider Electric',
                     'Model': x.Model,
-                    'SamplingPeriod': '1 Second'
-                },
-                'Location': {
-                    'Floor': x.Floor
-                },
-                'Extra': {
-                    'FlatNumber': x.FlatNum,
-                    'Type': x.Type,
-                    'MeterID': x.Id,
-                    'Block': x.Block,
-                    'Wing': x.Wing,
-                    'LoadType': x.LoadType,
+                    'SamplingPeriod': '1 Second',
+		    'MeterID': x.Id,
+		    'LoadType': x.LoadType,
                     'SubLoadType': x.SubLoadType,
                     'SupplyType': x.SupplyType
+                },
+                'Location': {
+                    'Floor': x.Floor,
+		    'FlatNumber': x.FlatNum,
+		    'Wing': x.Wing
+                },
+                'Extra': {
+                    'Type': x.Type,
+                    'Block': x.Block
                 }
             }
             ## Add actuator to meter.
