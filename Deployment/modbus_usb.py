@@ -169,7 +169,7 @@ class ModbusUSBDriver(SmapDriver):
             self.TRANSFORMERS = [str(opts.get('TRANSFORMERS'))]
             self.BUSCOUPLERS = [str(opts.get('BUSCOUPLERS'))]
             self.PANELS = [str(opts.get('PANELS'))]
-            self.SOURCES = [str(opts.get('SOURCSE'))]
+            self.SOURCES = [str(opts.get('SOURCES'))]
             self.BUILDINGS = [str(opts.get('BUILDINGS'))]
 
         ## For multiple meters to be configured.
@@ -191,7 +191,7 @@ class ModbusUSBDriver(SmapDriver):
             self.TRANSFORMERS = [str(x) for x in opts.get('TRANSFORMERS')]
             self.BUSCOUPLERS = [str(x) for x in opts.get('BUSCOUPLERS')]
             self.PANELS = [str(x) for x in opts.get('PANELS')]
-            self.SOURCES = [str(x) for x in opts.get('SOURCSE')]
+            self.SOURCES = [str(x) for x in opts.get('SOURCES')]
             self.BUILDINGS = [str(x) for x in opts.get('BUILDINGS')]
 
 
@@ -213,7 +213,7 @@ class ModbusUSBDriver(SmapDriver):
                                   'EM6436': [2, 6, 10, 12, 18, 32, 46, 60, 92, 98]}
 
         self.parameters = {
-            'EM6400': ['Power', 'PowerFactor', 'Voltage', 'VoltageLL', 'Current', 'Frequency', 'ApparentEnergy',
+            'EM6400': ['Power', 'PowerFactor', 'VoltageLL', 'Voltage', 'Current', 'Frequency', 'ApparentEnergy',
                        'Energy', 'OnHours', 'PowerIntr'],
             'EM6433': ['Power', 'Current', 'PowerPhase1', 'PowerPhase2', 'PowerPhase3', 'Energy', 'OnHours',
                        'PowerIntr'],
