@@ -26,7 +26,8 @@ class RateActuator(actuate.NStateActuator):
 
 
 class Meter:
-    def __init__(self, Id, Rate, Floor, Type, Model, FlatNum, Block, Wing, LoadType, SubLoadType, SupplyType):
+    def __init__(self, Id, Rate, Floor, Type, Model, FlatNum, Block, Wing, LoadType, SubLoadType, SupplyType, Voltage,
+                 BillingType, Transformer, BusCoupler, Panel, Source, Building):
         self.Id = Id
         self.Rate = Rate
         self.Floor = Floor
@@ -38,6 +39,13 @@ class Meter:
         self.LoadType = LoadType
         self.SubLoadType = SubLoadType
         self.SupplyType = SupplyType
+        self.Voltage = Voltage
+        self.BillingType = BillingType
+        self.Transformer = Transformer
+        self.BusCoupler = BusCoupler
+        self.Panel = Panel
+        self.Source = Source
+        self.Building = Building
 
 
 class ModbusUSBDriver(SmapDriver):
@@ -52,7 +60,9 @@ class ModbusUSBDriver(SmapDriver):
         for x in xrange(0, self.meter_count):
             self.meters += [
                 Meter(self.METERS[x], self.RATES[x], self.FLOORS[x], self.TYPES[x], self.MODELS[x], self.FLATNUMS[x],
-                      self.BLOCKS[x], self.WINGS[x], self.LOADTYPES[x], self.SUBLOADTYPES[x], self.SUPPLYTYPES[x])]
+                      self.BLOCKS[x], self.WINGS[x], self.LOADTYPES[x], self.SUBLOADTYPES[x], self.SUPPLYTYPES[x],
+                      self.VOLTAGES[x], self.BILLINGTYPES[x], self.TRANSFORMERS[x], self.BUSCOUPLERS[x], self.PANELS[x],
+                      self.SOURCES[x], self.BUILDINGS[x])]
 
         del (self.RATES)
         del (self.METERS)
@@ -65,6 +75,13 @@ class ModbusUSBDriver(SmapDriver):
         del (self.LOADTYPES)
         del (self.SUBLOADTYPES)
         del (self.SUPPLYTYPES)
+        del (self.VOLTAGES)
+        del (self.BILLINGTYPES)
+        del (self.TRANSFORMERS)
+        del (self.BUSCOUPLERS)
+        del (self.PANELS)
+        del (self.SOURCES)
+        del (self.BUILDINGS)
 
         self.configure_parameters()
 
@@ -104,8 +121,9 @@ class ModbusUSBDriver(SmapDriver):
 
                 for y in xrange(0, len(self.parameters[x.Model])):
                     read_reg = self.reading_registers[x.Model][y]
-                    if (read_reg==92 or read_reg==98):
-                        decoder = BinaryPayloadDecoder.fromRegisters(self.res.registers[read_reg:read_reg+2], endian=Endian.Big)
+                    if (read_reg == 92 or read_reg == 98):
+                        decoder = BinaryPayloadDecoder.fromRegisters(self.res.registers[read_reg:read_reg + 2],
+                                                                     endian=Endian.Big)
                         value = decoder.decode_32bit_uint()
                     else:
                         value = convert((self.res.registers[read_reg + 1] << 16) + self.res.registers[read_reg])
@@ -146,6 +164,13 @@ class ModbusUSBDriver(SmapDriver):
             self.LOADTYPES = [str(opts.get('LOADTYPES'))]
             self.SUBLOADTYPES = [str(opts.get('SUBLOADTYPES'))]
             self.SUPPLYTYPES = [str(opts.get('SUPPLYTYPES'))]
+            self.VOLTAGES = [str(opts.get('VOLTAGES'))]
+            self.BILLINGTYPES = [str(opts.get('BILLINGTYPES'))]
+            self.TRANSFORMERS = [str(opts.get('TRANSFORMERS'))]
+            self.BUSCOUPLERS = [str(opts.get('BUSCOUPLERS'))]
+            self.PANELS = [str(opts.get('PANELS'))]
+            self.SOURCES = [str(opts.get('SOURCSE'))]
+            self.BUILDINGS = [str(opts.get('BUILDINGS'))]
 
         ## For multiple meters to be configured.
         else:
@@ -161,6 +186,14 @@ class ModbusUSBDriver(SmapDriver):
             self.LOADTYPES = [str(x) for x in opts.get('LOADTYPES')]
             self.SUBLOADTYPES = [str(x) for x in opts.get('SUBLOADTYPES')]
             self.SUPPLYTYPES = [str(x) for x in opts.get('SUPPLYTYPES')]
+            self.VOLTAGES = [str(x) for x in opts.get('VOLTAGES')]
+            self.BILLINGTYPES = [str(x) for x in opts.get('BILLINGTYPES')]
+            self.TRANSFORMERS = [str(x) for x in opts.get('TRANSFORMERS')]
+            self.BUSCOUPLERS = [str(x) for x in opts.get('BUSCOUPLERS')]
+            self.PANELS = [str(x) for x in opts.get('PANELS')]
+            self.SOURCES = [str(x) for x in opts.get('SOURCSE')]
+            self.BUILDINGS = [str(x) for x in opts.get('BUILDINGS')]
+
 
             ##Connection Parameters.
         self.BAUD_RATE = int(opts.get('BAUD_RATE', 9600))
@@ -175,23 +208,22 @@ class ModbusUSBDriver(SmapDriver):
 
 
     def configure_parameters(self):
-        self.reading_registers = {'EM6400': [2, 6, 12, 14, 24, 26, 58, 60, 92, 98],
+        self.reading_registers = {'EM6400': [2, 6, 8, 10, 12, 14, 58, 60, 92, 98],
                                   'EM6433': [2, 12, 18, 32, 46, 60, 92, 98],
-                                  'EM6436': [2, 6, 12, 18, 26, 32, 46, 60, 92, 98]}
+                                  'EM6436': [2, 6, 10, 12, 18, 32, 46, 60, 92, 98]}
 
         self.parameters = {
-            'EM6400': ['Power', 'PowerFactor', 'Current', 'Frequency', 'VoltagePhase1Phase2', 'VoltagePhase1', 'ApparentEnergy',
+            'EM6400': ['Power', 'PowerFactor', 'Voltage', 'VoltageLL', 'Current', 'Frequency', 'ApparentEnergy',
                        'Energy', 'OnHours', 'PowerIntr'],
             'EM6433': ['Power', 'Current', 'PowerPhase1', 'PowerPhase2', 'PowerPhase3', 'Energy', 'OnHours',
                        'PowerIntr'],
-            'EM6436': ['Power', 'PowerFactor', 'Current', 'PowerPhase1', 'VoltagePhase1', 'PowerPhase2', 'PowerPhase3',
+            'EM6436': ['Power', 'PowerFactor', 'Voltage', 'Current', 'PowerPhase1', 'PowerPhase2', 'PowerPhase3',
                        'Energy', 'OnHours', 'PowerIntr']}
 
         self.units = {'Power': 'Watts',
                       'PowerFactor': '',
                       'Voltage': 'Volts',
-                      'VoltagePhase1Phase2': 'Volts',
-                      'VoltagePhase1': 'Volts',
+                      'VoltageLL': 'Volts',
                       'Frequency': 'Hertz',
                       'Energy': 'Watt-Hours',
                       'ApparentEnergy': 'Volt-Ampere-Hours',
@@ -216,15 +248,24 @@ class ModbusUSBDriver(SmapDriver):
                     'Manufacturer': 'Schneider Electric',
                     'Model': x.Model,
                     'SamplingPeriod': '1 Second',
-		    'MeterID': x.Id,
-		    'LoadType': x.LoadType,
+                    'MeterID': x.Id,
+                    'LoadType': x.LoadType,
                     'SubLoadType': x.SubLoadType,
                     'SupplyType': x.SupplyType
                 },
-                'Location': {
+                'Supply': {
+                    'Voltage': x.Voltage,
+                    'BillingType': x.BillingType,
+                    'Transformer': x.Transformer,
+                    'Panel': x.Panel,
+                    'BusCoupler': x.BusCoupler,
+                    'Source': x.Source
+                },
+                'LoadLocation': {
+                    'Building': x.Building,
                     'Floor': x.Floor,
-		    'FlatNumber': x.FlatNum,
-		    'Wing': x.Wing
+                    'FlatNumber': x.FlatNum,
+                    'Wing': x.Wing
                 },
                 'Extra': {
                     'Type': x.Type,
