@@ -210,7 +210,8 @@ class ModbusUSBDriver(SmapDriver):
     def configure_parameters(self):
         self.reading_registers = {'EM6400': [2, 6, 8, 10, 12, 14, 58, 60, 92, 98],
                                   'EM6433': [2, 12, 18, 32, 46, 60, 92, 98],
-                                  'EM6436': [2, 6, 10, 12, 18, 32, 46, 60, 92, 98]}
+                                  'EM6436': [2, 6, 10, 12, 18, 32, 46, 60, 92, 98],
+				  'EM6500': [2, 6, 10, 12, 18, 22, 32, 36, 46, 50, 60, 92, 98]}
 
         self.parameters = {
             'EM6400': ['Power', 'PowerFactor', 'VoltageLL', 'Voltage', 'Current', 'Frequency', 'ApparentEnergy',
@@ -218,6 +219,8 @@ class ModbusUSBDriver(SmapDriver):
             'EM6433': ['Power', 'Current', 'PowerPhase1', 'PowerPhase2', 'PowerPhase3', 'Energy', 'OnHours',
                        'PowerIntr'],
             'EM6436': ['Power', 'PowerFactor', 'Voltage', 'Current', 'PowerPhase1', 'PowerPhase2', 'PowerPhase3',
+                       'Energy', 'OnHours', 'PowerIntr'],
+	    'EM6500': ['Power', 'PowerFactor', 'Voltage', 'Current', 'PowerPhase1', 'PowerFactorPhase1', 'PowerPhase2', 'PowerFactorPhase2', 'PowerPhase3', 'PowerFactorPhase3',
                        'Energy', 'OnHours', 'PowerIntr']}
 
         self.units = {'Power': 'Watts',
