@@ -27,7 +27,7 @@ class RateActuator(actuate.NStateActuator):
 
 class Meter:
     def __init__(self, Id, Rate, Floor, Type, Model, FlatNum, Block, Wing, LoadType, SubLoadType, SupplyType, Voltage,
-                 BillingType, Transformer, BusCoupler, Panel, Source, Building):
+                 BillingType, Transformer, BusCoupler, Panel, Source, Building, Sync, Level):
         self.Id = Id
         self.Rate = Rate
         self.Floor = Floor
@@ -46,6 +46,8 @@ class Meter:
         self.Panel = Panel
         self.Source = Source
         self.Building = Building
+        self.Sync = Sync
+        self.Level = Level
 
 
 class ModbusUSBDriver(SmapDriver):
@@ -62,7 +64,7 @@ class ModbusUSBDriver(SmapDriver):
                 Meter(self.METERS[x], self.RATES[x], self.FLOORS[x], self.TYPES[x], self.MODELS[x], self.FLATNUMS[x],
                       self.BLOCKS[x], self.WINGS[x], self.LOADTYPES[x], self.SUBLOADTYPES[x], self.SUPPLYTYPES[x],
                       self.VOLTAGES[x], self.BILLINGTYPES[x], self.TRANSFORMERS[x], self.BUSCOUPLERS[x], self.PANELS[x],
-                      self.SOURCES[x], self.BUILDINGS[x])]
+                      self.SOURCES[x], self.BUILDINGS[x], self.SYNC[x], self.LEVELS[x])]
 
         del (self.RATES)
         del (self.METERS)
@@ -82,6 +84,8 @@ class ModbusUSBDriver(SmapDriver):
         del (self.PANELS)
         del (self.SOURCES)
         del (self.BUILDINGS)
+        del (self.LEVELS)
+        del (self.SYNC)
 
         self.configure_parameters()
 
@@ -171,6 +175,8 @@ class ModbusUSBDriver(SmapDriver):
             self.PANELS = [str(opts.get('PANELS'))]
             self.SOURCES = [str(opts.get('SOURCES'))]
             self.BUILDINGS = [str(opts.get('BUILDINGS'))]
+            self.LEVELS = [str(opts.get('LEVELS'))]
+            self.SYNC = [str(opts.get('SYNC'))]
 
         ## For multiple meters to be configured.
         else:
@@ -193,7 +199,8 @@ class ModbusUSBDriver(SmapDriver):
             self.PANELS = [str(x) for x in opts.get('PANELS')]
             self.SOURCES = [str(x) for x in opts.get('SOURCES')]
             self.BUILDINGS = [str(x) for x in opts.get('BUILDINGS')]
-
+            self.LEVELS = [str(x) for x in opts.get('LEVELS')]
+            self.SYNC = [str(x) for x in opts.get('SYNC')]
 
             ##Connection Parameters.
         self.BAUD_RATE = int(opts.get('BAUD_RATE', 9600))
@@ -211,7 +218,7 @@ class ModbusUSBDriver(SmapDriver):
         self.reading_registers = {'EM6400': [2, 6, 8, 10, 12, 14, 58, 60, 92, 98],
                                   'EM6433': [2, 12, 18, 32, 46, 60, 92, 98],
                                   'EM6436': [2, 6, 10, 12, 18, 32, 46, 60, 92, 98],
-				  'EM6500': [2, 6, 10, 12, 18, 22, 32, 36, 46, 50, 60, 92, 98]}
+                                  'EM6500': [2, 6, 10, 12, 18, 22, 32, 36, 46, 50, 60, 92, 98]}
 
         self.parameters = {
             'EM6400': ['Power', 'PowerFactor', 'VoltageLL', 'Voltage', 'Current', 'Frequency', 'ApparentEnergy',
@@ -220,7 +227,8 @@ class ModbusUSBDriver(SmapDriver):
                        'PowerIntr'],
             'EM6436': ['Power', 'PowerFactor', 'Voltage', 'Current', 'PowerPhase1', 'PowerPhase2', 'PowerPhase3',
                        'Energy', 'OnHours', 'PowerIntr'],
-	    'EM6500': ['Power', 'PowerFactor', 'Voltage', 'Current', 'PowerPhase1', 'PowerFactorPhase1', 'PowerPhase2', 'PowerFactorPhase2', 'PowerPhase3', 'PowerFactorPhase3',
+            'EM6500': ['Power', 'PowerFactor', 'Voltage', 'Current', 'PowerPhase1', 'PowerFactorPhase1', 'PowerPhase2',
+                       'PowerFactorPhase2', 'PowerPhase3', 'PowerFactorPhase3',
                        'Energy', 'OnHours', 'PowerIntr']}
 
         self.units = {'Power': 'Watts',
@@ -272,7 +280,9 @@ class ModbusUSBDriver(SmapDriver):
                 },
                 'Extra': {
                     'Type': x.Type,
-                    'Block': x.Block
+                    'Block': x.Block,
+                    'Sync': x.Sync,
+                    'MeterLevel': x.Level
                 }
             }
             ## Add actuator to meter.
