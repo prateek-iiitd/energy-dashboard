@@ -26,158 +26,132 @@ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
 OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-"""
-@author Stephen Dawson-Haggerty <stevedh@eecs.berkeley.edu>
-"""
+
 """Driver to poll data from a Weather Underground weather station,
-using their xml api.
+using their json api.
 
-Optional Parameters: 
+Optional Parameters:
 
-"Address" : URI to fetch data from.  The driver will GET the URL,
-and add a query parameter with the station id.
-
-"ID" [default KCABERKE25] : wunderground station id
-
+"ID" [default IDELHINE8] : wunderground station id.
+"Key" [default None] : API key to use for fetching data.
 "Rate" [default 60] : number of seconds between polls.
+"Timezone" [default Asia/Kolkata] : Timezone for the location
 """
 
 import urllib2
-import rfc822
-import datetime
-import time
-from xml.dom.minidom import parse, parseString
-from xml.parsers.expat import ExpatError
-
-from twisted.internet import reactor
+import json
+from datetime import datetime
+from calendar import timegm
 from twisted.python import log
 from smap import driver, util
-from smap.contrib import dtutil
+from dateutil.tz import gettz, tzutc
 
-def get_val(dom, key):
-    try:
-        v = dom.getElementsByTagName(key)[0].firstChild.nodeValue
-    except AttributeError:
-        v = None
-    return v
-
-def parse_local(t):
-    return datetime.datetime.strptime(t, "Last Updated on %B %d, %I:%M %p")
-
-def guess_timezone(local, gmt):
-    # parse the two timestamps
-    zonename = local.split(' ')[-1]
-    local = parse_local(local[:-4])
-    gmt = datetime.datetime(*rfc822.parsedate_tz(gmt)[:5])
-    # and fix the year since their string doesn't come with one
-    local = local.replace(year=gmt.year)
-    onames = dtutil.olson(zonename, local - gmt)
-    if len(onames):
-        log.msg("WARNING: inferred zone code %s for %s" % (onames[-1], zonename))
-        return onames[-1]
-    else:
-        log.msg("WARNING: no match found for zone name %s with utcoffset %s" % 
-                (zonename, str(local - gmt)))
-        return zonename
-    
 
 class WunderGround(driver.SmapDriver):
     def setup(self, opts):
-        self.url = opts.get("Address", 
-                            "http://api.wunderground.com/weatherstation/WXCurrentObXML.asp")
-        self.id = opts.get("ID", "KCABERKE25")
+        self.id = opts.get("ID", "IDELHINE8")
+        self.key = opts.get("Key", "")
+        self.url = "http://api.wunderground.com/api/%s/conditions/astronomy/q/pws:%s.json" % (self.key, self.id)
         self.rate = int(opts.get("Rate", 60))
-        self.last_time = 0
-        self.metadata_done = False
-        self.tz = opts.get('Timezone', None)
-       
-        self.timeseries = [
-#                           {"path": "/wind_dir", "unit": "deg", "xml_nodename": "wind_degrees", "data_type": "long"},
-#                           {"path": "/wind_speed", "unit": "m/s", "xml_nodename": "wind_mph", "data_type": "double"},
-#                           {"path": "/wind_gust", "unit": "m/s", "xml_nodename": "wind_gust_mph", "data_type": "double"},
-                           {"path": "/humidity", "unit": "rh", "xml_nodename": "relative_humidity", "data_type": "long"},
-                           {"path": "/temperature", "unit": "C", "xml_nodename": "temp_c", "data_type": "double"},
-#                           {"path": "/pressure", "unit": "mb", "xml_nodename": "pressure_mb", "data_type": "double"},
-#                           {"path": "/dew_point", "unit": "C", "xml_nodename": "dewpoint_c", "data_type": "double"}
-                          ]
-        self.metadata = [
-                         {"tag": "Extra/StationType", "xml_nodename": "station_type"},  
-                         {"tag": "Location/StationID", "xml_nodename": "station_id"},  
-                         {"tag": "Location/Latitude", "xml_nodename": "latitude"},  
-                         {"tag": "Location/Longitude", "xml_nodename": "longitude"},  
-                         {"tag": "Location/Altitude", "xml_nodename": "elevation"},  
-                         {"tag": "Location/Uri", "xml_nodename": "link"},  
-                         {"tag": "Location/City", "xml_nodename": "city"},  
-                         {"tag": "Location/State", "xml_nodename": "state"}
-                        ]
+        self.last_weather = None
+        self.last_sun_phase = None
+        self.timezone = opts.get('Timezone', 'Asia/Kolkata')
 
-    def create_timeseries(self, dom):
-        if not self.tz:
-            try:
-                local_time = get_val(dom, "observation_time")
-                reading_time = get_val(dom, "observation_time_rfc822")
-                tz = guess_timezone(local_time, reading_time)
-            except Exception, e:
-                tz = self.tz
-                log.err()
+        self.weather_series = [
+            {"path": "/humidity", "unit": "", "get_val": self.get_rh, "data_type": "long"},
+            {"path": "/temperature", "unit": "C", "get_val": self.get_temp, "data_type": "double"},
+        ]
 
-        for ts in self.timeseries:
+        self.sun_series = [{"path": "/sunrise", "unit": "", "get_val": self.get_sunrise, "data_type": "long"},
+                           {"path": "/sunset", "unit": "", "get_val": self.get_sunset, "data_type": "long"}]
+
+        for ts in self.weather_series:
             self.add_timeseries(ts["path"], ts["unit"], data_type=ts["data_type"],
-                                timezone=self.tz)
- 
+                                timezone=self.timezone)
+
+        for ts in self.sun_series:
+            self.add_timeseries(ts["path"], ts["unit"], data_type=ts["data_type"],
+                                timezone=self.timezone)
+
+    def get_rh(self, js_res):
+        assert len(js_res['current_observation']['relative_humidity']) > 1
+        return int(js_res['current_observation']['relative_humidity'][:-1])
+
+    def get_temp(self, js_res):
+        return js_res['current_observation']['temp_c']
+
+    def get_sunrise(self, js_res):
+        local_epoch = int(js_res['current_observation']['local_epoch'])
+        local_datetime = datetime.fromtimestamp(local_epoch, gettz(self.timezone))
+        sunrise_hour = int(js_res['sun_phase']['sunrise']['hour'])
+        sunrise_minute = int(js_res['sun_phase']['sunrise']['minute'])
+        sunrise_datetime = local_datetime.replace(hour=sunrise_hour, minute=sunrise_minute)
+        utc_sunrise = sunrise_datetime.astimezone(tzutc())
+        utc_stamp = timegm(utc_sunrise.timetuple())
+        return utc_stamp
+
+    def get_sunset(self, js_res):
+        local_epoch = int(js_res['current_observation']['local_epoch'])
+        local_datetime = datetime.fromtimestamp(local_epoch, gettz(self.timezone))
+        sunset_hour = int(js_res['sun_phase']['sunset']['hour'])
+        sunset_minute = int(js_res['sun_phase']['sunset']['minute'])
+        sunset_datetime = local_datetime.replace(hour=sunset_hour, minute=sunset_minute)
+        utc_sunset = sunset_datetime.astimezone(tzutc())
+        utc_stamp = timegm(utc_sunset.timetuple())
+        return utc_stamp
+
     def start(self):
         util.periodicSequentialCall(self.update).start(self.rate)
 
     def update(self):
         try:
-            url = self.url + "?ID=" + self.id
-            fh = urllib2.urlopen(url, timeout=10)
+            url = self.url
+            fh = urllib2.urlopen(url)
         except urllib2.URLError, e:
             log.err("URLError getting reading: [%s]: %s" % (url, str(e)))
             return
         except urllib2.HTTPError, e:
             log.err("HTTP Error: [%s]: %s" % (url, str(e)))
             return
-
-        try:
-            dom = parse(fh)
-        except ExpatError, e:
-            log.err("Exception parsing DOM [%s]: %s" % (url, str(e)))
-            return
-
-        if not self.metadata_done:
-            self.create_timeseries(dom)
-
-        try:
-            reading_time = rfc822.parsedate_tz(get_val(dom, "observation_time_rfc822"))
-            reading_time = int(rfc822.mktime_tz(reading_time))
         except Exception, e:
-            log.err("Exception finding time [%s]: %s" % (url, str(e)))
+            log.err("Exception: %s" % (str(e)))
             return
 
-        if reading_time > self.last_time:
-        
-            for ts in self.timeseries:
-                v = get_val(dom, ts["xml_nodename"])
-                if v is not None:
-                    if ts["data_type"] == "double":
-                       v = float(v)
-                    else:
-                       v = int(v)
-                    self.add(ts["path"], reading_time, v)
-            
-            last_time = reading_time
- 
-        if not self.metadata_done:
-            self.metadata_done = True
-            d = {}
-            for m in self.metadata:
-                v = get_val(dom, m["xml_nodename"])
-                if v is not None:
-                    d.update({m["tag"]: v})
-                else:
-                    d.update({m["tag"]: ""})
+        try:
+            resp = fh.read()
+            js_res = json.loads(resp)
+            observation_epoch = int(js_res['current_observation']['observation_epoch'])
+            local_epoch = int(js_res['current_observation']['local_epoch'])
+            local_datetime = datetime.fromtimestamp(local_epoch, gettz(self.timezone))
+        except ValueError, e:
+            log.err("ValueError: %s" % (str(e)))
+            return
+        except KeyError, e:
+            log.err("KeyError: %s" % (str(e)))
+            return
 
-            self.set_metadata('/', d)
+        if not self.last_weather or self.last_weather < observation_epoch:
+            self.last_weather = observation_epoch
 
-        dom.unlink()
+            try:
+                for ts in self.weather_series:
+                    get_val = ts['get_val']
+                    val = get_val(js_res)
+                    self.add(ts["path"], observation_epoch, val)
+
+            except KeyError, e:
+                log.err("KeyError: %s" % (str(e)))
+                return
+
+        if not self.last_sun_phase or local_datetime.day != self.last_sun_phase.day:
+            self.last_sun_phase = local_datetime
+
+            try:
+                for ts in self.sun_series:
+                    get_val = ts['get_val']
+                    val = get_val(js_res)
+                    self.add(ts["path"], observation_epoch, val)
+
+            except KeyError, e:
+                log.err("KeyError: %s" % (str(e)))
+                return
